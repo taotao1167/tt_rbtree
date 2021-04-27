@@ -69,12 +69,12 @@ static void insert_fixup(rbt *tree, rbt_node *node) {
 			if (node->parent == grand_parent->left) {
 				if (node == node->parent->right) {
 					node = node->parent;
-					left_rotate(tree, node->parent);
+					left_rotate(tree, node);
 				}
 			} else {
 				if (node == node->parent->left) {
 					node = node->parent;
-					right_rotate(tree, node->parent);
+					right_rotate(tree, node);
 				}
 			}
 			node->parent->is_black = 1;
