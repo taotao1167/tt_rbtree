@@ -3,39 +3,47 @@
 
 #include <stdint.h>
 
-typedef union rbt_data {
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
+typedef union RBTData {
 	void *ptr;
 	int fd;
 	uint32_t u32;
 	uint64_t u64;
-}rbt_data;
+}RBTData;
 
-typedef struct rbt_node {
-	rbt_data key;
-	rbt_data value;
+typedef struct RBTNode {
+	RBTData key;
+	RBTData value;
 	unsigned char is_black;
-	struct rbt_node *left;
-	struct rbt_node *right;
-	struct rbt_node *parent;
-}rbt_node;
+	struct RBTNode *left;
+	struct RBTNode *right;
+	struct RBTNode *parent;
+}RBTNode;
 
-typedef int (*tt_rbt_compare_cb)(rbt_data key1, rbt_data key2);
-typedef void (*tt_rbt_free_cb)(rbt_node *node);
-typedef void (*tt_rbt_print_cb)(rbt_node *node);
+typedef int (*tt_rbt_compare_cb)(RBTData key1, RBTData key2);
+typedef void (*tt_rbt_free_cb)(RBTNode *node);
+typedef void (*tt_rbt_print_cb)(RBTNode *node);
 
-typedef struct rbt {
-	struct rbt_node *root;
+typedef struct RBT {
+	struct RBTNode *root;
 	tt_rbt_compare_cb compare_cb;
 	tt_rbt_free_cb free_cb;
 	tt_rbt_print_cb print_cb;
-}rbt;
+}RBT;
 
-extern int tt_rbt_init(rbt *tree, tt_rbt_compare_cb compare_cb, tt_rbt_print_cb print_cb, tt_rbt_free_cb free_cb);
-extern int tt_rbt_insert(rbt *tree, rbt_data key, rbt_data value);
-extern rbt_node *tt_rbt_search(const rbt tree, rbt_data key);
-extern int tt_rbt_delete(rbt *tree, rbt_data key);
-extern void tt_rbt_print(const rbt tree);
-extern void tt_rbt_destroy(rbt *tree);
+extern int tt_rbt_init(RBT *tree, tt_rbt_compare_cb compare_cb, tt_rbt_print_cb print_cb, tt_rbt_free_cb free_cb);
+extern int tt_rbt_insert(RBT *tree, RBTData key, RBTData value);
+extern RBTNode *tt_rbt_search(const RBT tree, RBTData key);
+extern int tt_rbt_delete(RBT *tree, RBTData key);
+extern void tt_rbt_print(const RBT tree);
+extern void tt_rbt_destroy(RBT *tree);
+
+#ifdef  __cplusplus
+}
+#endif
 
 #endif
 

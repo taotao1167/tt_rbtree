@@ -3,19 +3,16 @@
 #include <string.h>
 #include "tt_rbtree.h"
 
-#ifdef WATCH_RAM
-#include "tt_malloc_debug.h"
-#define MY_MALLOC(x) my_malloc((x), __FILE__, __LINE__)
-#define MY_FREE(x) my_free((x), __FILE__, __LINE__)
-#define MY_REALLOC(x, y) my_realloc((x), (y), __FILE__, __LINE__)
-#else
 #define MY_MALLOC(x) malloc((x))
 #define MY_FREE(x) free((x))
 #define MY_REALLOC(x, y) realloc((x), (y))
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
 
-static void left_rotate(rbt *tree, rbt_node *node) {
-	rbt_node *right_child = NULL;
+static void left_rotate(RBT *tree, RBTNode *node) {
+	RBTNode *right_child = NULL;
 
 	right_child = node->right;
 	node->right = right_child->left;
@@ -34,8 +31,8 @@ static void left_rotate(rbt *tree, rbt_node *node) {
 	node->parent = right_child;
 }
 
-static void right_rotate(rbt *tree, rbt_node *node) {
-	rbt_node *left_child = NULL;
+static void right_rotate(RBT *tree, RBTNode *node) {
+	RBTNode *left_child = NULL;
 
 	left_child = node->left;
 	node->left = left_child->right;
@@ -54,8 +51,8 @@ static void right_rotate(rbt *tree, rbt_node *node) {
 	node->parent = left_child;
 }
 
-static void insert_fixup(rbt *tree, rbt_node *node) {
-	rbt_node *uncle = NULL, *grand_parent = NULL;
+static void insert_fixup(RBT *tree, RBTNode *node) {
+	RBTNode *uncle = NULL, *grand_parent = NULL;
 
 	while (node->parent != NULL && !node->parent->is_black) {
 		grand_parent = node->parent->parent;
@@ -90,11 +87,11 @@ static void insert_fixup(rbt *tree, rbt_node *node) {
 	return;
 }
 
-int tt_rbt_init(rbt *tree, tt_rbt_compare_cb compare_cb, tt_rbt_print_cb print_cb, tt_rbt_free_cb free_cb) {
+int tt_rbt_init(RBT *tree, tt_rbt_compare_cb compare_cb, tt_rbt_print_cb print_cb, tt_rbt_free_cb free_cb) {
 	if (tree == NULL) {
 		return -1;
 	}
-	memset(tree, 0x00, sizeof(rbt));
+	memset(tree, 0x00, sizeof(RBT));
 	tree->root = NULL;
 	tree->compare_cb = compare_cb;
 	tree->print_cb = print_cb;
@@ -102,8 +99,8 @@ int tt_rbt_init(rbt *tree, tt_rbt_compare_cb compare_cb, tt_rbt_print_cb print_c
 	return 0;
 }
 
-static int insert(rbt *tree, rbt_node *node) {
-	rbt_node *pos = NULL, *parent = NULL;
+static int insert(RBT *tree, RBTNode *node) {
+	RBTNode *pos = NULL, *parent = NULL;
 
 	parent = NULL;
 	pos = tree->root;
@@ -132,15 +129,15 @@ static int insert(rbt *tree, rbt_node *node) {
 	return 0;
 }
 
-int tt_rbt_insert(rbt *tree, rbt_data key, rbt_data value) {
-	rbt_node *new_node = NULL;
+int tt_rbt_insert(RBT *tree, RBTData key, RBTData value) {
+	RBTNode *new_node = NULL;
 
-	new_node = (rbt_node *)MY_MALLOC(sizeof(rbt_node));
+	new_node = (RBTNode *)MY_MALLOC(sizeof(RBTNode));
 	if (new_node == NULL) {
 		printf("malloc failed.\n");
 		return -1;
 	}
-	memset(new_node, 0x00, sizeof(rbt_node));
+	memset(new_node, 0x00, sizeof(RBTNode));
 	new_node->key = key;
 	new_node->value = value;
 	if (insert(tree, new_node) != 0) {
@@ -150,8 +147,8 @@ int tt_rbt_insert(rbt *tree, rbt_data key, rbt_data value) {
 	return 0;
 }
 
-rbt_node *tt_rbt_search(const rbt tree, rbt_data key) {
-	rbt_node *target = NULL;
+RBTNode *tt_rbt_search(const RBT tree, RBTData key) {
+	RBTNode *target = NULL;
 
 	target = tree.root;
 	while (target != NULL) {
@@ -166,8 +163,8 @@ rbt_node *tt_rbt_search(const rbt tree, rbt_data key) {
 	return target;
 }
 
-static rbt_node *find_successor(rbt *tree, rbt_node *node) {
-	rbt_node *successor = NULL;
+static RBTNode *find_successor(RBT *tree, RBTNode *node) {
+	RBTNode *successor = NULL;
 
 	successor = node->right;
 	while (successor->left != NULL) {
@@ -176,8 +173,8 @@ static rbt_node *find_successor(rbt *tree, rbt_node *node) {
 	return successor;
 }
 
-static void delete_fixup(rbt *tree, rbt_node *node, rbt_node *brother) {
-	rbt_node *parent = NULL;
+static void delete_fixup(RBT *tree, RBTNode *node, RBTNode *brother) {
+	RBTNode *parent = NULL;
 	int is_leftchild = 0;
 
 	while (node == NULL || (node->parent != NULL && node->is_black)) {
@@ -235,8 +232,8 @@ static void delete_fixup(rbt *tree, rbt_node *node, rbt_node *brother) {
 	node->is_black = 1;
 }
 
-static void delete(rbt *tree, rbt_node *node) {
-	rbt_node *substitute = NULL, *child = NULL, *brother = NULL;
+static void delete(RBT *tree, RBTNode *node) {
+	RBTNode *substitute = NULL, *child = NULL, *brother = NULL;
 	
 	substitute = (node->left == NULL || node->right == NULL) ? node : find_successor(tree, node);
 	child = (substitute->left != NULL) ? substitute->left : substitute->right;
@@ -268,8 +265,8 @@ static void delete(rbt *tree, rbt_node *node) {
 	return;
 }
 
-int tt_rbt_delete(rbt *tree, rbt_data key) {
-	rbt_node *target = NULL;
+int tt_rbt_delete(RBT *tree, RBTData key) {
+	RBTNode *target = NULL;
 
 	target = tt_rbt_search(*tree, key);
 	if (target == NULL) {
@@ -280,7 +277,7 @@ int tt_rbt_delete(rbt *tree, rbt_data key) {
 	return 0;
 }
 
-void print_node(tt_rbt_print_cb print_cb, rbt_node *node, int deep) {
+void print_node(tt_rbt_print_cb print_cb, RBTNode *node, int deep) {
 	int  i = 0;
 
 	if (node == NULL) {
@@ -296,11 +293,11 @@ void print_node(tt_rbt_print_cb print_cb, rbt_node *node, int deep) {
 	print_node(print_cb, node->right, deep + 1);
 }
 
-void tt_rbt_print(const rbt tree) {
+void tt_rbt_print(const RBT tree) {
 	print_node(tree.print_cb, tree.root, 0);
 }
 
-static void destroy_node(tt_rbt_free_cb free_cb, rbt_node *node) {
+static void destroy_node(tt_rbt_free_cb free_cb, RBTNode *node) {
 	if (node->left != NULL) {
 		destroy_node(free_cb, node->left);
 	}
@@ -312,56 +309,56 @@ static void destroy_node(tt_rbt_free_cb free_cb, rbt_node *node) {
 	}
 	MY_FREE(node);
 }
-void tt_rbt_destroy(rbt *tree) {
+void tt_rbt_destroy(RBT *tree) {
 	if (tree->root) {
 		destroy_node(tree->free_cb, tree->root);
 	}
-	memset(tree, 0x00, sizeof(rbt));
+	memset(tree, 0x00, sizeof(RBT));
 }
 
 #if 1
-int compare_demo(rbt_data key1, rbt_data key2) {
+int compare_demo(RBTData key1, RBTData key2) {
 	return key1.u32 - key2.u32;
 }
-void print_demo(rbt_node *node) {
+void print_demo(RBTNode *node) {
 	printf("[%u,%u]", node->key.u32, node->value.u32);
 }
-void free_demo(rbt_node *node) {
+void free_demo(RBTNode *node) {
 	/* printf("MY_FREE(node->key);\n");
 	printf("MY_FREE(node->data);\n"); */
 	return;
 }
 int main() {
 	int i = 0, test_num = 1000;
-	rbt tree;
+	RBT tree;
 
 	tt_rbt_init(&tree, compare_demo, print_demo, free_demo);
 	for (i = 1; i <= test_num; i++) {
-		tt_rbt_insert(&tree, (rbt_data)i, (rbt_data)i);
+		tt_rbt_insert(&tree, (RBTData)i, (RBTData)i);
 	}
 	tt_rbt_print(tree);
 	if (1) {
 		for (i = 1; i <= test_num; i++) {
-			if (NULL == tt_rbt_search(tree, (rbt_data)i)) {
+			if (NULL == tt_rbt_search(tree, (RBTData)i)) {
 				printf("search failed.\n");
 			}
 		}
 #if 0
 		for (i = 1; i <= test_num; i++) {
 			printf("delete %d\n", i);
-			tt_rbt_delete(&tree, (rbt_data)i);
+			tt_rbt_delete(&tree, (RBTData)i);
 			tt_rbt_print(tree);
 		}
 #endif
 #if 1
 		for (i = test_num >> 1; i <= test_num; i++) {
-			printf("delete %d\n", i);
-			tt_rbt_delete(&tree, (rbt_data)i);
+			// printf("delete %d\n", i);
+			tt_rbt_delete(&tree, (RBTData)i);
 			// tt_rbt_print(tree);
 		}
 		for (i = 1; i <= test_num >> 1; i++) {
-			printf("delete %d\n", i);
-			tt_rbt_delete(&tree, (rbt_data)i);
+			// printf("delete %d\n", i);
+			tt_rbt_delete(&tree, (RBTData)i);
 			// tt_rbt_print(tree);
 		}
 #endif
@@ -370,6 +367,10 @@ int main() {
 	}
 printf("return 0\n");
 	return 0;
+}
+#endif
+
+#ifdef __cplusplus
 }
 #endif
 
