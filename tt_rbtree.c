@@ -87,7 +87,7 @@ static void insert_fixup(RBT *tree, RBTNode *node) {
 	return;
 }
 
-int tt_rbt_init(RBT *tree, tt_rbt_compare_cb compare_cb, tt_rbt_print_cb print_cb, tt_rbt_free_cb free_cb) {
+int tt_rbt_init(RBT *tree, RBTCompareCb compare_cb, RBTPrintCb print_cb, RBTFreeCb free_cb) {
 	if (tree == NULL) {
 		return -1;
 	}
@@ -277,27 +277,75 @@ int tt_rbt_delete(RBT *tree, RBTData key) {
 	return 0;
 }
 
-void print_node(tt_rbt_print_cb print_cb, RBTNode *node, int deep) {
+/*
+root
+├── left
+│   ├── left
+│   └── right
+└─── right
+    ├── left
+    └── right
+*/
+#define MAX_DEEP 64
+void print_node(RBTPrintCb print_cb, RBTNode *node, int deep, int *line) {
 	int  i = 0;
 
 	if (node == NULL) {
 		return;
 	}
-	for (i = 0; i < deep; i++) {
-		printf("    ");
+	if (node->parent == NULL) {
+		printf("root");
+	} else {
+		for (i = 0; i < deep - 1; i++) {
+			printf(line[i] ? "│   " : "    ");
+		}
+		printf((node == node->parent->left) ? "├── " : "└── ");
 	}
-	printf("%s: ", (node->parent == NULL) ? "root" : ((node == node->parent->left) ? "left" : "right"));
 	print_cb(node);
-	printf(" %s\n", node->is_black ? "black" : "red");
-	print_node(print_cb, node->left, deep + 1);
-	print_node(print_cb, node->right, deep + 1);
+	printf(" %c\n", node->is_black ? 'B' : 'R');
+	if (node->left == NULL && node->right == NULL) {
+		return;
+	}
+	line[deep] = 1;
+	if (node->left != NULL) {
+		if (deep + 1 >= MAX_DEEP) {
+			for (i = 0; i < deep; i++) {
+				printf(line[i] ? "│   " : "    ");
+			}
+			printf("├── ...\n");
+		} else {
+			print_node(print_cb, node->left, deep + 1, line);
+		}
+	} else {
+		for (i = 0; i < deep; i++) {
+			printf(line[i] ? "│   " : "    ");
+		}
+		printf("├── null\n");
+	}
+	line[deep] = 0;
+	if (node->right != NULL) {
+		if (deep + 1 >= MAX_DEEP) {
+			for (i = 0; i < deep; i++) {
+				printf(line[i] ? "│   " : "    ");
+			}
+			printf("└── ...\n");
+		} else {
+			print_node(print_cb, node->right, deep + 1, line);
+		}
+	} else {
+		for (i = 0; i < deep; i++) {
+			printf(line[i] ? "│   " : "    ");
+		}
+		printf("└── null\n");
+	}
 }
 
 void tt_rbt_print(const RBT tree) {
-	print_node(tree.print_cb, tree.root, 0);
+	int line[MAX_DEEP] = {0}; /* max deep 64 */
+	print_node(tree.print_cb, tree.root, 0, line);
 }
 
-static void destroy_node(tt_rbt_free_cb free_cb, RBTNode *node) {
+static void destroy_node(RBTFreeCb free_cb, RBTNode *node) {
 	if (node->left != NULL) {
 		destroy_node(free_cb, node->left);
 	}
@@ -318,7 +366,8 @@ void tt_rbt_destroy(RBT *tree) {
 
 #if 1
 int compare_demo(RBTData key1, RBTData key2) {
-	return key1.u32 - key2.u32;
+	return key1.u32 - key2.u32; /* asc */
+	// return key2.u32 - key1.u32; /* desc */
 }
 void print_demo(RBTNode *node) {
 	printf("[%u,%u]", node->key.u32, node->value.u32);
